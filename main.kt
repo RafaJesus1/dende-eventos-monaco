@@ -1,4 +1,5 @@
 
+
 enum class TipoEvento {
     SOCIAL,
     CORPORATIVO,
@@ -42,11 +43,13 @@ fun main() {
         var capacidadeMaximaPessoas: Int,
         var localEvento: String,
         var estaAtivo: Boolean = false,
-        var precoUnitarioIngresso: Double? = null,
+        var precoUnitarioIngresso: Double = 0.0,
         var estonarValorIngresso: Boolean = false,
         var taxaEstorno: Double = 0.0,
 
-        val emailOrganizador: String
+        val emailOrganizador: String,
+
+        var ingressosVendidos: Int = 0
     )
 
     open class Usuario(
@@ -54,7 +57,14 @@ fun main() {
         var dataNascimento: String,
         var sexo: String,
         val email: String,
-        var senha: String
+        var senha: String,
+
+    )
+
+    data class Ingresso(
+        val evento: Evento,
+        val emailUsuario: String,
+        var cancelado: Boolean = false
     )
 
     class UsuarioOrganizador(
@@ -72,7 +82,17 @@ fun main() {
 
     val listaDeUsuarios: MutableList<Usuario> = mutableListOf()
 
+    val listaUsuariosInativos: MutableList<Usuario> = mutableListOf()
+
     val listaDeEventos: MutableList<Evento> = mutableListOf()
+
+    val listaEventosDesativados: MutableList<Evento> = mutableListOf()
+
+    val listaFeedEventos: MutableList<Evento> = mutableListOf()
+
+    var listaDeIngressos: MutableList<Ingresso> = mutableListOf()
+
+
 
     //Variáveis: Usuários Comuns e Organizadores
     var nomeUsuario: String
@@ -121,7 +141,7 @@ fun main() {
     11. Listar Meus Eventos
     12. Feed de Eventos Ativos
     
-    --- INGRESSOS E VENDAS ---
+    --- INGRESSOS ---
     13. Comprar Ingresso
     14. Cancelar Ingresso
     15. Listar Meus Ingressos 
@@ -136,7 +156,7 @@ fun main() {
         val opcao = readln()
 
         when (opcao) {
-            "1" ->{
+            "1" -> {
                 println("======= CADASTRO USUÁRIO =======")
 
                 println("Digite seu nome: ")
@@ -151,18 +171,20 @@ fun main() {
                 println("Digite seu melhor email: ")
                 emailUsuario = readln()
 
-                val emailExiste = listaDeUsuarios.any {
-                    usuario -> usuario.email == emailUsuario
+                val emailExiste = listaDeUsuarios.any { usuario ->
+                    usuario.email == emailUsuario
                 }
 
-                if (emailExiste) {
-                    println("ERRO: Este e-mail já está sendo usado por outra pessoa!")
-                    continue
+                when (emailExiste) {
+                    true -> {
+                        println("ERRO: Este e-mail já está sendo usado por outra pessoa!")
+                        continue
+                    }
 
-                } else {
-                    print("Digite a senha: ")
-                    senhaUsuario = readln()
-
+                    false -> {
+                        print("Digite a senha: ")
+                        senhaUsuario = readln()
+                    }
                 }
 
                 val novoUsuario = Usuario(
@@ -184,7 +206,7 @@ fun main() {
                 println("Será cadastrado como empresa? (Sim ou Não)")
                 val seEmpresa = readln().lowercase()
 
-                when(seEmpresa) {
+                when (seEmpresa) {
                     "sim" -> {
                         println("Digite o CNPJ da empresa: ")
                         cnpjEmpresa = readln()
@@ -218,8 +240,8 @@ fun main() {
                 println("Digite seu melhor email: ")
                 emailUsuario = readln()
 
-                val emailExiste = listaDeUsuarios.any {
-                        usuario -> usuario.email == emailUsuario
+                val emailExiste = listaDeUsuarios.any { usuario ->
+                    usuario.email == emailUsuario
                 }
 
                 if (emailExiste) {
@@ -264,15 +286,46 @@ fun main() {
                 println("Digite sua senha: ")
                 val validarSenha = readln()
 
-                val validarUsuario = listaDeUsuarios.find{it.email == validarEmail && it.senha == validarSenha}
+                val encontrarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
 
-                if (validarUsuario == null) {
+                if (encontrarUsuario == null) {
                     println("Usuário não encontrado.")
                     println("Verifique seu e-mail e senha novamente.")
                     continue
+                }
 
-                } else {
-                  println("teste")
+                println("Pressione ENTER vazio para manter o valor atual.")
+                println("O e-mail (${encontrarUsuario.email}) NÃO pode ser alterado.")
+
+                print("Nome atual: ${encontrarUsuario.nome}")
+                println("Alterar para: ")
+                nomeUsuario = readln()
+                if (nomeUsuario.isNotEmpty()) {
+                    encontrarUsuario.nome = nomeUsuario
+                    println("Alteração feita com sucesso")
+                }
+
+                print("Sexo atual: ${encontrarUsuario.sexo}")
+                println("Alterar para: ")
+                sexoUsuario = readln()
+                if (sexoUsuario.isNotEmpty()) {
+                    encontrarUsuario.nome = sexoUsuario
+                    println("Alteração feita com sucesso")
+                }
+
+                print("Data de nascimento atual: ${encontrarUsuario.dataNascimento}")
+                println("Alterar para: ")
+                dataNascimentoUsuario = readln()
+                if (dataNascimentoUsuario.isNotEmpty()) {
+                    encontrarUsuario.nome = dataNascimentoUsuario
+                    println("Alteração feita com sucesso")
+                }
+
+                print("Senha atual: ${encontrarUsuario.senha}")
+                senhaUsuario = readln()
+                if (senhaUsuario.isNotEmpty()) {
+                    encontrarUsuario.nome = senhaUsuario
+                    println("Alteração feita com sucesso")
                 }
             }
 
@@ -281,7 +334,6 @@ fun main() {
 
                 if (listaDeUsuarios.isEmpty()) {
                     println("Nenhum usuário encontrado.")
-                    println("Cadastre um usuário, que seja organizador, antes de cadastrar um evento.")
                     continue
                 }
 
@@ -291,17 +343,16 @@ fun main() {
                 println("Digite sua senha: ")
                 val validarSenha = readln()
 
-                val validarUsuario = listaDeUsuarios.find {it.email == validarEmail && it.senha == validarSenha}
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
 
-                val encontrarUsuario = listaDeUsuarios.filter {it.email == validarEmail}
+                val encontrarUsuario = listaDeUsuarios.filter { it.email == validarEmail }
 
                 if (validarUsuario == null) {
                     println("Usuário não encontrado.")
                     println("Verifique seu e-mail e senha novamente.")
                     continue
                 } else {
-                    encontrarUsuario.forEach {
-                        usuario ->
+                    encontrarUsuario.forEach { usuario ->
                         println("Nome: ${usuario.nome}")
 
                         val separarDataNascimento = usuario.dataNascimento.split("/")
@@ -315,7 +366,7 @@ fun main() {
 
                         println("E-mail: ${usuario.email}")
 
-                        if(usuario is UsuarioOrganizador) {
+                        if (usuario is UsuarioOrganizador) {
                             println("CNPJ da empresa: ${usuario.cnpj}")
                             println("Razão social da empresa: ${usuario.razaoSocial}")
                             println("Nome fantasia da empresa: ${usuario.nomeFantasia}")
@@ -325,11 +376,89 @@ fun main() {
             }
 
             "5" -> {
-                println("Inativar Usuário")
+                println("======= INATIVAR USUÁRIO =======")
+
+                if (listaDeUsuarios.isEmpty()) {
+                    println("Nenhum usuário encontrado.")
+                    continue
+                }
+
+                println("Digite seu e-mail: ")
+                val validarEmail = readln()
+
+                println("Digite sua senha: ")
+                val validarSenha = readln()
+
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
+
+                if (validarUsuario == null) {
+                    println("Usuário não encontrado.")
+                    println("Verifique seu e-mail e senha novamente.")
+                    continue
+                }
+
+                println("Deseja inativar o usuário '${validarUsuario.nome}'? (Sim ou Não)")
+                val escolhaUsuario = readln()
+
+                when {
+                    !escolhaUsuario.equals("sim", ignoreCase = true) -> {
+
+                    }
+
+                    validarUsuario is UsuarioOrganizador && listaDeEventos.any { it.emailOrganizador == validarUsuario.email && it.estaAtivo } -> {
+                        println("ERRO: Operação negada!")
+                        println("O organizador possui eventos ativos pendentes.")
+                        println("Cancele ou conclua seus eventos antes de inativar a conta.")
+
+                    }
+
+                    else -> {
+                        listaDeUsuarios.remove(validarUsuario)
+                        listaUsuariosInativos.add(validarUsuario)
+                        println("Usuário inativado com sucesso!")
+                    }
+                }
             }
 
             "6" -> {
-                println("Reativar Usuário")
+                println("======= REATIVAR USUÁRIO =======")
+
+                if (listaUsuariosInativos.isEmpty()) {
+                    println("Nenhum usuário encontrado na lista de inativos.")
+                    continue
+                }
+
+                println("Digite seu e-mail: ")
+                val validarEmail = readln()
+
+                println("Digite sua senha: ")
+                val validarSenha = readln()
+
+                val validarUsuario = listaUsuariosInativos.find { it.email == validarEmail && it.senha == validarSenha }
+
+                if (validarUsuario == null) {
+                    println("Usuário não encontrado.")
+                    println("Verifique seu e-mail e senha novamente.")
+                    continue
+                }
+
+                println("Deseja inativar o usuário '${validarUsuario.nome}'? (Sim ou Não)")
+                val escolhaUsuario = readln().lowercase()
+
+                when (escolhaUsuario) {
+                    "sim" -> {
+                        listaUsuariosInativos.remove(validarUsuario)
+                        listaDeUsuarios.add(validarUsuario)
+                    }
+
+                    "não" -> {
+                        continue
+                    }
+
+                    else -> {
+                        println("Comando inválido. Tente novamente.")
+                    }
+                }
             }
 
             "7" -> {
@@ -347,9 +476,10 @@ fun main() {
                 println("Digite sua senha: ")
                 val validarSenha = readln()
 
-                val validarUsuario = listaDeUsuarios.find{it.email == validarEmail && it.senha == validarSenha}
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
 
-                when(validarUsuario) {
+
+                when (validarUsuario) {
                     null -> {
                         println("Usuário não encontrado.")
                         println("Verifique seu e-mail e senha novamente.")
@@ -370,7 +500,7 @@ fun main() {
 
                         var i = 1
                         println("Opções disponíveis do tipo de evento: ")
-                        TipoEvento.values().forEach{
+                        TipoEvento.values().forEach {
                             println("$i - $it")
                             i++
                         }
@@ -382,7 +512,7 @@ fun main() {
 
                         i = 1
                         println("Escolha a modalidade do evento: ")
-                        ModalidadeEvento.values().forEach{
+                        ModalidadeEvento.values().forEach {
                             println("$i - $it")
                             i++
                         }
@@ -402,12 +532,13 @@ fun main() {
                         println("O usuário poderá solicitar estorno do valor? ")
                         var liberarOpcaoEstorno = readln().lowercase()
 
-                        when(liberarOpcaoEstorno) {
+                        when (liberarOpcaoEstorno) {
                             "sim" -> {
                                 estonarValorIngresso = true
                                 println("Informe a taxa de estorno: ")
                                 taxaEstorno = readln().toDoubleOrNull() ?: 1.0
                             }
+
                             "não" -> estonarValorIngresso = false
                             else -> {
                                 println("Comando Inválido. O valor padrão para o estorno será como NÃO.")
@@ -443,15 +574,172 @@ fun main() {
             }
 
             "8" -> {
-                println("Alterar Evento")
+                println("======= ALTERAR EVENTO =======")
+
+                if (listaDeUsuarios.isEmpty()) {
+                    println("Nenhum usuário encontrado.")
+                    println("Cadastre um usuário, que seja organizador, antes de cadastrar um evento.")
+                    continue
+                }
+
+                println("Digite seu e-mail: ")
+                val validarEmail = readln()
+
+                println("Digite sua senha: ")
+                val validarSenha = readln()
+
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
+
+
+                when (validarUsuario) {
+                    null -> {
+                        println("Usuário não encontrado.")
+                        println("Verifique seu e-mail e senha novamente.")
+                        continue
+                    }
+
+                    is UsuarioOrganizador -> {
+                    }
+
+                    else -> {
+                        println("Torne-se organizador para poder criar eventos.")
+                        continue
+                    }
+                }
             }
 
             "9" -> {
-                println("Ativar Evento")
+                println("======= ATIVAR EVENTO =======")
+
+                if (listaDeEventos.isEmpty()) {
+                    println("Nenhum usuário encontrado.")
+                    println("Cadastre um usuário, que seja organizador, antes de cadastrar um evento.")
+                    continue
+                }
+
+                println("Digite seu e-mail: ")
+                val validarEmail = readln()
+
+                println("Digite sua senha: ")
+                val validarSenha = readln()
+
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
+
+                when (validarUsuario) {
+                    null -> {
+                        println("Usuário não encontrado.")
+                        println("Verifique seu e-mail e senha novamente.")
+                        continue
+                    }
+
+                    is UsuarioOrganizador -> {
+                        val listarEventos = listaDeEventos.filter { it.emailOrganizador == validarEmail }
+
+                        var i = 1
+                        listarEventos.forEach { evento ->
+                            print("Evento ${i}")
+                            println("Nome: ${evento.nomeEvento}")
+                            println("Data: ${evento.periodoRealizacao}")
+                            println("Local: ${evento.localEvento}")
+                            println("Preço Unitário: ${"%.2f".format(evento.precoUnitarioIngresso)}")
+                            println("Capacidade máxima de pessoas: ${evento.capacidadeMaximaPessoas}")
+                            println("-------------------------")
+                            i++
+                        }
+
+                        println("Digite o nome do evento que deseja ativar: ")
+                        val escolhaEvento = readln()
+
+                        val encontrarEvento = listaDeEventos.find { it.nomeEvento == escolhaEvento }
+
+                        if (encontrarEvento != null) {
+                            when (encontrarEvento.estaAtivo) {
+                                true -> {
+                                    println("O evento já está no feed eventos")
+                                }
+
+                                false -> {
+                                    listaFeedEventos.add(encontrarEvento)
+                                    encontrarEvento.estaAtivo = true
+                                    println("Evento adicionado no feed com sucesso!")
+                                }
+                            }
+                        } else {
+                            println("Não pode ser vazio.")
+                            continue
+                        }
+                    }
+
+                    else -> {
+                        println("Torne-se organizador para poder criar eventos.")
+                        continue
+                    }
+                }
             }
 
             "10" -> {
-                println("Desativar Evento")
+                println("======= DESATIVAR EVENTO =======")
+
+                if (listaDeEventos.isEmpty()) {
+                    println("Nenhum usuário encontrado.")
+                    println("Cadastre um usuário, que seja organizador, antes de cadastrar um evento.")
+                    continue
+                }
+
+                println("Digite seu e-mail: ")
+                val validarEmail = readln()
+
+                println("Digite sua senha: ")
+                val validarSenha = readln()
+
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
+
+                val listarEventos = listaDeEventos.filter { it.emailOrganizador == validarEmail }
+
+                when (validarUsuario) {
+                    null -> {
+                        println("Usuário não encontrado.")
+                        println("Verifique seu e-mail e senha novamente.")
+                        continue
+                    }
+
+                    is UsuarioOrganizador -> {
+                        var i = 1
+                        listarEventos.forEach { evento ->
+                            print("Evento ${i}")
+                            println("Nome: ${evento.nomeEvento}")
+                            println("Data: ${evento.periodoRealizacao}")
+                            println("Local: ${evento.localEvento}")
+                            println("Preço Unitário: ${"%.2f".format(evento.precoUnitarioIngresso)}")
+                            println("Capacidade máxima de pessoas: ${evento.capacidadeMaximaPessoas}")
+                            println("-------------------------")
+                            i++
+                        }
+
+                        println("Digite o nome do evento que deseja ativar: ")
+                        val escolhaEvento = readln()
+
+                        val encontrarEvento = listaDeEventos.find { it.nomeEvento == escolhaEvento }
+
+                        if (encontrarEvento != null) {
+                            when (encontrarEvento.estaAtivo) {
+                                true -> {
+                                    println("O evento não pode ser desativado!")
+                                }
+
+                                false -> {
+                                    listaEventosDesativados.add(encontrarEvento)
+                                    println("Evento desativado com sucesso!")
+                                }
+                            }
+                        }
+                    }
+
+                    else -> {
+                        println("Torne-se organizador para poder criar eventos.")
+                        continue
+                    }
+                }
             }
 
             "11" -> {
@@ -468,11 +756,11 @@ fun main() {
                 println("Digite sua senha: ")
                 val validarSenha = readln()
 
-                val validarUsuario = listaDeUsuarios.find{it.email == validarEmail && it.senha == validarSenha}
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
 
-                val listarEventos = listaDeEventos.filter{it.emailOrganizador == validarEmail}
+                val listarEventos = listaDeEventos.filter { it.emailOrganizador == validarEmail }
 
-                when(validarUsuario) {
+                when (validarUsuario) {
                     null -> {
                         println("Usuário não encontrado.")
                         println("Verifique seu e-mail e senha novamente.")
@@ -499,24 +787,206 @@ fun main() {
             }
 
             "12" -> {
-                println("Feed de Eventos Ativos")
+                println("======= FEED DE EVENTOS =======")
+
+                if (listaFeedEventos.isEmpty()) {
+                    println("Nenhum evento ativo no momento!")
+                    continue
+                }
+
+                listaFeedEventos.forEach { evento ->
+                    println("Título: ${evento.nomeEvento}")
+                    println("Descrição: ${evento.descricaoEvento}")
+                    println("Data: ${evento.periodoRealizacao}")
+                }
             }
 
             "13" -> {
-                println("Comprar Ingresso")
+                println("======= COMPRAR INGRESSO =======")
+
+                println("Digite seu e-mail: ")
+                val validarEmail = readln()
+
+                println("Digite sua senha: ")
+                val validarSenha = readln()
+
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
+
+                if (validarUsuario == null) {
+                    println("Usuário não encontrado.")
+                    println("Verifique seu e-mail e senha novamente.")
+                    continue
+                }
+
+                val eventosDisponiveis = listaFeedEventos.filter { it.estaAtivo }
+
+                if (eventosDisponiveis.isEmpty()) {
+                    println("Não há eventos ativos no momento.")
+                    continue
+                }
+
+                eventosDisponiveis.forEach {
+                    val vagas = it.capacidadeMaximaPessoas - it.ingressosVendidos
+                    println("- ${it.nomeEvento} | R$ ${"%.2f".format(it.precoUnitarioIngresso)} | Vagas: $vagas")
+                }
+
+                print("\nDigite o nome do evento que deseja: ")
+                val textoBusca = readln()
+
+                val eventoSelecionado = eventosDisponiveis.find {
+                    it.nomeEvento.equals(textoBusca, ignoreCase = true)
+                }
+
+                if (eventoSelecionado == null) {
+                    println("Evento não encontrado. Verifique o nome e tente novamente.")
+                    continue
+                }
+
+                val vagasDisponiveis = eventoSelecionado.capacidadeMaximaPessoas - eventoSelecionado.ingressosVendidos
+
+                if (vagasDisponiveis <= 0) {
+                    println("Esgotado! Não há mais ingressos para este evento.")
+                    continue
+                }
+
+                print("Quantos ingressos deseja comprar? ")
+                val quantidade = readln().toIntOrNull() ?: 0
+
+                if (quantidade <= 0) {
+                    println("Quantidade inválida.")
+                    continue
+                }
+
+                if (quantidade > vagasDisponiveis) {
+                    println("Não é possível comprar essa quantidade. Restam apenas $vagasDisponiveis vagas.")
+                    continue
+                }
+
+                val valorTotal = quantidade * eventoSelecionado.precoUnitarioIngresso
+
+                println("Resumo: $quantidade x ${eventoSelecionado.precoUnitarioIngresso}")
+                println("Total a pagar: R$ ${"%.2f".format(valorTotal)}")
+                print("Confirmar compra? (Sim/Não): ")
+
+                val confirmacao = readln()
+
+                if (confirmacao.equals("Sim", ignoreCase = true)) {
+                    eventoSelecionado.ingressosVendidos += quantidade
+
+                    repeat(quantidade) {
+                        listaDeIngressos.add(Ingresso(eventoSelecionado, validarUsuario.email))
+                    }
+
+                    println("Pagamento aprovado! Ingressos enviados para a conta de ${validarUsuario.nome}.")
+                } else {
+                    println("Compra cancelada.")
+                }
             }
 
             "14" -> {
-                println("Cancelar Ingresso")
+                println("======= CANCELAR INGRESSO =======")
+
+                println("Digite seu e-mail: ")
+                val validarEmail = readln()
+
+                println("Digite sua senha: ")
+                val validarSenha = readln()
+
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
+
+                if (validarUsuario == null) {
+                    println("Usuário não encontrado.")
+                    println("Verifique seu e-mail e senha novamente.")
+                    continue
+                }
+
+                val meusIngressosAtivos = listaDeIngressos.filter {
+                    it.emailUsuario == validarUsuario.email && !it.cancelado && it.evento.estaAtivo
+                }
+
+                if (meusIngressosAtivos.isEmpty()) {
+                    println("Você não possui ingressos ativos disponíveis para cancelamento.")
+                    continue
+                }
+
+                meusIngressosAtivos.forEach {
+                    println("- ${it.evento.nomeEvento}")
+                }
+
+                print("\nDigite o nome do evento que deseja cancelar o ingresso: ")
+                val textoBusca = readln()
+
+                val ingressoSelecionado = meusIngressosAtivos.find {
+                    it.evento.nomeEvento.equals(textoBusca, ignoreCase = true)
+                }
+
+                if (ingressoSelecionado == null) {
+                    println("Ingresso não encontrado. Verifique o nome e tente novamente.")
+                    continue
+                }
+
+                print("Confirmar cancelamento do ingresso para ${ingressoSelecionado.evento.nomeEvento}? (Sim/Não): ")
+                val confirmacao = readln()
+
+                if (confirmacao.equals("Sim", ignoreCase = true)) {
+                    ingressoSelecionado.cancelado = true
+                    println("Cancelamento aprovado! O seu ingresso foi inativado com sucesso.")
+                } else {
+                    println("Operação cancelada. Seu ingresso foi mantido.")
+                }
             }
 
             "15" -> {
-                println("Listar Meus Ingressos")
+                println("======= LISTAR MEUS INGRESSOS =======")
+
+                println("Digite seu e-mail: ")
+                val validarEmail = readln()
+
+                println("Digite sua senha: ")
+                val validarSenha = readln()
+
+                val validarUsuario = listaDeUsuarios.find { it.email == validarEmail && it.senha == validarSenha }
+
+                if (validarUsuario == null) {
+                    println("Usuário não encontrado.")
+                    println("Verifique seu e-mail e senha novamente.")
+                    continue
+                }
+
+                val meusIngressos = listaDeIngressos.filter { it.emailUsuario == validarUsuario.email }
+
+                if (meusIngressos.isEmpty()) {
+                    println("Você ainda não possui nenhum ingresso registrado.")
+                    continue
+                }
+
+                val ingressosAtivos = meusIngressos
+                    .filter { it.evento.estaAtivo && !it.cancelado }
+                    .sortedBy { it.evento.nomeEvento.lowercase() }
+
+                val ingressosInativos = meusIngressos
+                    .filter { !it.evento.estaAtivo || it.cancelado }
+                    .sortedBy { it.evento.nomeEvento.lowercase() }
+
+                val ingressosOrdenados = ingressosAtivos + ingressosInativos
+
+                ingressosOrdenados.forEach {
+                    val status = when {
+                        it.cancelado -> "CANCELADO"
+                        !it.evento.estaAtivo -> "INATIVO"
+                        else -> "ATIVO"
+                    }
+
+                    println("Evento: ${it.evento.nomeEvento}")
+                    println("Status do Ingresso: $status")
+                    println("-----------------------------------")
+                }
             }
 
             "0" -> {
                 println("Saindo do sistema...")
             }
+
             else -> {
                 println("Opção inválida. Por favor, tente novamente.")
             }
