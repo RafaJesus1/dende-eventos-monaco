@@ -599,6 +599,107 @@ fun main() {
                     }
 
                     is UsuarioOrganizador -> {
+                        val meusEventos = listaDeEventos.filter { it.emailOrganizador == validarUsuario.email }
+
+                        meusEventos.forEach {
+                            println("- ${it.nomeEvento} | Vendas: ${it.ingressosVendidos}/${it.capacidadeMaximaPessoas}")
+                        }
+
+                        print("\nDigite o nome do evento que deseja alterar: ")
+                        val textoBusca = readln()
+
+                        val eventoSelecionado = meusEventos.find {
+                            it.nomeEvento.equals(textoBusca, ignoreCase = true)
+                        }
+
+                        if (eventoSelecionado == null) {
+                            println("Evento não encontrado. Verifique o nome e tente novamente.")
+                            continue
+                        }
+
+                        print("Novo nome (atual: '${eventoSelecionado.nomeEvento}' | Enter para manter): ")
+                        val novoNome = readln()
+                        if (novoNome.isNotBlank()) eventoSelecionado.nomeEvento = novoNome
+
+                        print("Nova descrição (atual: '${eventoSelecionado.descricaoEvento}' | Enter para manter): ")
+                        val novaDescricao = readln()
+                        if (novaDescricao.isNotBlank()) eventoSelecionado.descricaoEvento = novaDescricao
+
+                        print("Novo período (atual: '${eventoSelecionado.periodoRealizacao}' | Enter para manter): ")
+                        val novoPeriodo = readln()
+                        if (novoPeriodo.isNotBlank()) eventoSelecionado.periodoRealizacao = novoPeriodo
+
+                        print("Novo tipo (atual: '${eventoSelecionado.tipoEvento}' | Enter para manter): ")
+                        val novoTipo = readln()
+                        if (novoTipo.isNotBlank()) {
+                            try {
+                                eventoSelecionado.tipoEvento = TipoEvento.valueOf(novoTipo.uppercase())
+                            } catch (e: Exception) {
+                                println("Erro: Tipo de evento inválido.")
+                                continue
+                            }
+                        }
+
+                        print("Nova modalidade (atual: '${eventoSelecionado.modalidadeEvento}' | Enter para manter): ")
+                        val novaModalidade = readln()
+                        if (novaModalidade.isNotBlank()) {
+                            try {
+                                eventoSelecionado.modalidadeEvento = ModalidadeEvento.valueOf(novaModalidade.uppercase())
+                            } catch (e: Exception) {
+                                println("Erro: Modalidade de evento inválida.")
+                                continue
+                            }
+                        }
+
+                        print("Nova capacidade (atual: ${eventoSelecionado.capacidadeMaximaPessoas} | Enter para manter): ")
+                        val novaCapacidadeTexto = readln()
+                        if (novaCapacidadeTexto.isNotBlank()) {
+                            val novaCapacidade = novaCapacidadeTexto.toIntOrNull() ?: eventoSelecionado.capacidadeMaximaPessoas
+
+                            if (novaCapacidade < eventoSelecionado.ingressosVendidos) {
+                                println("Erro: A capacidade não pode ser menor que os ingressos já vendidos (${eventoSelecionado.ingressosVendidos}).")
+                                continue
+                            }
+                            eventoSelecionado.capacidadeMaximaPessoas = novaCapacidade
+                        }
+
+                        print("Novo local (atual: '${eventoSelecionado.localEvento}' | Enter para manter): ")
+                        val novoLocal = readln()
+                        if (novoLocal.isNotBlank()) eventoSelecionado.localEvento = novoLocal
+                        
+
+                        print("Novo preço unitário (atual: R$ ${"%.2f".format(eventoSelecionado.precoUnitarioIngresso)} | Enter para manter): ")
+                        val novoPrecoTexto = readln()
+                        if (novoPrecoTexto.isNotBlank()) {
+                            val novoPreco = novoPrecoTexto.toDoubleOrNull() ?: eventoSelecionado.precoUnitarioIngresso
+
+                            if (novoPreco < 0) {
+                                println("Erro: O preço não pode ser negativo.")
+                                continue
+                            }
+                            eventoSelecionado.precoUnitarioIngresso = novoPreco
+                        }
+
+                        val estornoAtual = if (eventoSelecionado.estonarValorIngresso) "Sim" else "Não"
+                        print("Permitir estorno? Sim/Não (atual: $estornoAtual | Enter para manter): ")
+                        val novoEstorno = readln()
+                        if (novoEstorno.isNotBlank()) {
+                            eventoSelecionado.estonarValorIngresso = novoEstorno.equals("Sim", ignoreCase = true)
+                        }
+
+                        print("Nova taxa de estorno (atual: ${eventoSelecionado.taxaEstorno} | Enter para manter): ")
+                        val novaTaxaTexto = readln()
+                        if (novaTaxaTexto.isNotBlank()) {
+                            val novaTaxa = novaTaxaTexto.toDoubleOrNull() ?: eventoSelecionado.taxaEstorno
+
+                            if (novaTaxa < 0.0 || novaTaxa > 1.0) {
+                                println("Erro: A taxa de estorno deve ser um valor entre 0.0 e 1.0.")
+                                continue
+                            }
+                            eventoSelecionado.taxaEstorno = novaTaxa
+                        }
+
+                        println("Evento atualizado com sucesso!")
                     }
 
                     else -> {
