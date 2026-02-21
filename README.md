@@ -35,4 +35,3 @@ o barema [https://docs.google.com/spreadsheets/d/1HqedU09n_u-5SLp5yi7pbcFoOqQbBR
 Grupo:
 - Rafael Jesus
 - Levi Ferreira
-- Luiz Gustavo
